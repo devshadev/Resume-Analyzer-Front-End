@@ -12,33 +12,31 @@ const STAGES = [
 
 const AnalyzingStep = ({ jobData, resumeFile }) => {
   const navigate = useNavigate();
+  const hasRun = useRef(false);
+
   const [currentStage, setCurrentStage] = useState(1);
   const [status, setStatus] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [reportId, setReportId] = useState(null);
+  const [warning, setWarning] = useState('');
 
-const hasRun = useRef(false);
-
-useEffect(() => {
-  if (!jobData || !resumeFile) return;
-  if (hasRun.current) return;
-  hasRun.current = true;
-  runAnalysis();
-}, []);
+  useEffect(() => {
+    if (!jobData || !resumeFile) return;
+    if (hasRun.current) return;
+    hasRun.current = true;
+    runAnalysis();
+  }, []);
 
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const runAnalysis = async () => {
     try {
-      // Stage 1 — upload and parse
       setCurrentStage(1);
 
       const formData = new FormData();
       formData.append('resume', resumeFile);
       formData.append('jobData', JSON.stringify(jobData));
 
-      // Advance stages visually while waiting for the backend
-      // The real work happens server-side — we simulate progress
       const stageTimer = async () => {
         await delay(2000); setCurrentStage(2);
         await delay(2000); setCurrentStage(3);
@@ -46,23 +44,31 @@ useEffect(() => {
         await delay(3000); setCurrentStage(5);
       };
 
-      // Run stage animation and API call in parallel
       const [response] = await Promise.all([
         analysisApi.run(formData),
         stageTimer(),
       ]);
 
       setReportId(response.data.reportId);
+
+      if (response.data.warning) {
+        setWarning(response.data.warning);
+      }
+
       setStatus('success');
     } catch (error) {
-      setErrorMessage(
-        error.response?.data?.error || 'Analysis failed. Please try again.'
-      );
-      setStatus('error');
+      const errData = error.response?.data;
+      setErrorMessage(errData?.error || 'Analysis failed. Please try again.');
+      if (errData?.reportId) {
+        setReportId(errData.reportId);
+        setStatus('partial');
+      } else {
+        setStatus('error');
+      }
     }
   };
 
-  // ── Error state ─────────────────────────────────────────────────────────────
+  // ── Error state ───────────────────────────────────────────────────────────
   if (status === 'error') {
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
@@ -83,7 +89,31 @@ useEffect(() => {
     );
   }
 
-  // ── Success state ────────────────────────────────────────────────────────────
+  // ── Partial state ─────────────────────────────────────────────────────────
+  if (status === 'partial') {
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
+        <div className="w-14 h-14 bg-amber-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <svg className="w-7 h-7 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Partially completed</h3>
+        <p className="text-sm text-gray-500 mb-2">{errorMessage}</p>
+        <p className="text-xs text-amber-600 mb-6">
+          Your resume was scored and analyzed. The cover letter could not be generated this time.
+        </p>
+        <button
+          onClick={() => navigate(`/reports/${reportId}`)}
+          className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          View partial report →
+        </button>
+      </div>
+    );
+  }
+
+  // ── Success state ─────────────────────────────────────────────────────────
   if (status === 'success') {
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
@@ -93,6 +123,9 @@ useEffect(() => {
           </svg>
         </div>
         <h3 className="text-lg font-semibold text-gray-800 mb-2">Analysis complete</h3>
+        {warning && (
+          <p className="text-xs text-amber-600 mb-2">{warning}</p>
+        )}
         <p className="text-sm text-gray-500 mb-6">
           Your resume has been analyzed. View your full report below.
         </p>
@@ -106,7 +139,7 @@ useEffect(() => {
     );
   }
 
-  // ── Loading state ────────────────────────────────────────────────────────────
+  // ── Loading state ─────────────────────────────────────────────────────────
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8">
       <div className="text-center mb-8">
@@ -121,7 +154,6 @@ useEffect(() => {
         </p>
       </div>
 
-      {/* Stages */}
       <div className="flex flex-col gap-3">
         {STAGES.map((stage) => {
           const isDone   = currentStage > stage.id;

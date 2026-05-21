@@ -21,10 +21,12 @@ const StatusBadge = ({ status }) => (
     px-2.5 py-1 rounded-full text-xs font-medium
     ${status === 'completed' ? 'bg-green-50 text-green-700'
       : status === 'processing' ? 'bg-indigo-50 text-indigo-700'
+      : status === 'partial' ? 'bg-amber-50 text-amber-700'
       : 'bg-red-50 text-red-700'}
   `}>
     {status === 'completed' ? 'Completed'
       : status === 'processing' ? 'Processing'
+      : status === 'partial' ? 'Partial'
       : 'Failed'}
   </span>
 );

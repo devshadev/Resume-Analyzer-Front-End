@@ -7,6 +7,7 @@ import KeywordDiff from '@/components/report/KeywordDiff';
 import SectionFeedback from '@/components/report/SectionFeedback';
 import CoverLetter from '@/components/report/CoverLetter';
 import ATSChecks from '@/components/report/ATSChecks';
+import RelevantJobs from '../components/report/RelevantJobs';
 
 const ReportPage = () => {
     const { id } = useParams();
@@ -65,6 +66,7 @@ const ReportPage = () => {
         { id: 'keywords', label: 'Keywords' },
         { id: 'ats', label: 'ATS Checks' },
         { id: 'cover-letter', label: 'Cover Letter' },
+        { id: 'jobs', label: '🔍 Relevant Jobs' },
     ];
 
     return (
@@ -219,6 +221,9 @@ const ReportPage = () => {
                     coverLetter={report.coverLetter}
                     humanizedLetter={report.humanizedLetter}
                 />
+            )}
+            {activeTab === 'jobs' && (
+                <RelevantJobs reportId={report._id} />
             )}
         </DashboardLayout>
     );
