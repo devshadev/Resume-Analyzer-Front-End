@@ -213,7 +213,7 @@ const RegisterPage = () => {
 
         {/* GitHub OAuth */}
         <a
-          href={`${import.meta.env.VITE_API_URL || 'http://localhost:4000/api'}/auth/github`}
+          href="https://resume-analyzer-back-end.onrender.com/api/auth/github"
           className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-lg border border-white/20 hover:bg-white/10 transition-all text-sm font-medium text-white"
           style={{ background: 'rgba(255,255,255,0.05)' }}
         >
